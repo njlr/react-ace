@@ -27,17 +27,18 @@ export default class ReactAce extends Component {
     .forEach(method => {
       this[method] = this[method].bind(this);
     });
+    this.silent = false;
   }
 
   componentDidMount() {
     const { onBeforeLoad } = this.props;
-
     if (onBeforeLoad) {
       onBeforeLoad(ace);
     }
   }
 
   initEditor(element) {
+    this.silent= true;
     const {
       mode,
       theme,
@@ -53,6 +54,8 @@ export default class ReactAce extends Component {
     } = this.props;
 
     this.editor = ace.edit(element);
+
+    this.editor.$blockScrolling = Infinity;
 
     const editorProps = Object.keys(this.props.editorProps);
     for (let i = 0; i < editorProps.length; i++) {
@@ -87,6 +90,8 @@ export default class ReactAce extends Component {
     if (keyboardHandler) {
       this.editor.setKeyboardHandler('ace/keyboard/' + keyboardHandler);
     }
+
+    this.silent = false;
 
     if (onLoad) {
       onLoad(this.editor);
@@ -138,9 +143,13 @@ export default class ReactAce extends Component {
   }
 
   onChange() {
-    if (this.props.onChange && !this.silent) {
-      const value = this.editor.getValue();
-      this.props.onChange(value);
+    if (this.props.onChange) {
+      if (!this.silent) {
+        const value = this.editor.getValue();
+        if (value !== this.props.value) {
+          this.props.onChange(value);
+        }
+      }
     }
   }
 
