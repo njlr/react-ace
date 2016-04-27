@@ -38,6 +38,10 @@ export default class ReactAce extends Component {
   }
 
   initEditor(element) {
+    if (element === null || element === this.lastElement) {
+      return;
+    }
+    this.lastElement = element;
     this.silent= true;
     const {
       mode,
@@ -65,7 +69,7 @@ export default class ReactAce extends Component {
     this.editor.getSession().setMode(`ace/mode/${mode}`);
     this.editor.setTheme(`ace/theme/${theme}`);
     this.editor.setFontSize(fontSize);
-    this.editor.setValue(value, cursorStart);
+    this.editor.setValue(value, cursorStart || -1);
     this.editor.renderer.setShowGutter(showGutter);
     this.editor.getSession().setUseWrapMode(wrapEnabled);
     this.editor.setShowPrintMargin(showPrintMargin);
@@ -74,6 +78,7 @@ export default class ReactAce extends Component {
     this.editor.on('copy', this.onCopy);
     this.editor.on('paste', this.onPaste);
     this.editor.on('change', this.onChange);
+
     this.handleOptions(this.props);
 
     for (let i = 0; i < editorOptions.length; i++) {
@@ -132,7 +137,7 @@ export default class ReactAce extends Component {
     if (this.editor.getValue() !== nextProps.value) {
       // editor.setValue is a synchronous function call, change event is emitted before setValue return.
       this.silent = true;
-      this.editor.setValue(nextProps.value, nextProps.cursorStart);
+      this.editor.setValue(nextProps.value, nextProps.cursorStart || -1);
       this.silent = false;
     }
   }
@@ -143,12 +148,10 @@ export default class ReactAce extends Component {
   }
 
   onChange() {
-    if (this.props.onChange) {
-      if (!this.silent) {
-        const value = this.editor.getValue();
-        if (value !== this.props.value) {
-          this.props.onChange(value);
-        }
+    if (this.props.onChange && !this.silent) {
+      const value = this.editor.getValue();
+      if (value !== this.props.value) {
+        this.props.onChange(value);
       }
     }
   }
@@ -192,8 +195,7 @@ export default class ReactAce extends Component {
         id={name}
         className={className}
         style={divStyle}
-        ref={ (element) => this.initEditor(element) }
-      >
+        ref={(element) => this.initEditor(element)}>
       </div>
     );
   }
@@ -256,7 +258,7 @@ ReactAce.defaultProps = {
   highlightActiveLine: true,
   showPrintMargin: true,
   tabSize: 4,
-  cursorStart: 1,
+  cursorStart: null,
   editorProps: {},
   setOptions: {},
   wrapEnabled: false,
