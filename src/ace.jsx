@@ -52,6 +52,7 @@ export default class ReactAce extends Component {
       showGutter,
       wrapEnabled,
       showPrintMargin,
+      showInvisibles, 
       keyboardHandler,
       onLoad,
       commands,
@@ -73,6 +74,7 @@ export default class ReactAce extends Component {
     this.editor.renderer.setShowGutter(showGutter);
     this.editor.getSession().setUseWrapMode(wrapEnabled);
     this.editor.setShowPrintMargin(showPrintMargin);
+    this.editor.setShowInvisibles(showInvisibles);
     this.editor.on('focus', this.onFocus);
     this.editor.on('blur', this.onBlur);
     this.editor.on('copy', this.onCopy);
@@ -127,6 +129,9 @@ export default class ReactAce extends Component {
     }
     if (nextProps.showPrintMargin !== oldProps.showPrintMargin) {
       this.editor.setShowPrintMargin(nextProps.showPrintMargin);
+    }
+    if (nextProps.showInvisibles !== oldProps.showInvisibles) {
+      this.editor.setShowInvisibles(nextProps.showInvisibles);
     }
     if (nextProps.showGutter !== oldProps.showGutter) {
       this.editor.renderer.setShowGutter(nextProps.showGutter);
@@ -257,6 +262,7 @@ ReactAce.defaultProps = {
   readOnly: false,
   highlightActiveLine: true,
   showPrintMargin: true,
+  showInvisibles: false, 
   tabSize: 4,
   cursorStart: null,
   editorProps: {},
