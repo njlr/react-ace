@@ -10,7 +10,7 @@ const editorOptions = [
   'tabSize',
   'enableBasicAutocompletion',
   'enableLiveAutocompletion',
-  'enableSnippets '
+  'enableSnippets',
 ];
 
 export default class ReactAce extends Component {
@@ -34,74 +34,6 @@ export default class ReactAce extends Component {
     const { onBeforeLoad } = this.props;
     if (onBeforeLoad) {
       onBeforeLoad(ace);
-    }
-  }
-
-  initEditor(element) {
-    if (element === null || element === this.lastElement) {
-      return;
-    }
-    this.lastElement = element;
-    this.silent= true;
-    const {
-      mode,
-      theme,
-      fontSize,
-      value,
-      cursorStart,
-      showGutter,
-      wrapEnabled,
-      showPrintMargin,
-      showInvisibles, 
-      keyboardHandler,
-      onLoad,
-      commands,
-    } = this.props;
-
-    this.editor = ace.edit(element);
-
-    this.editor.$blockScrolling = Infinity;
-
-    const editorProps = Object.keys(this.props.editorProps);
-    for (let i = 0; i < editorProps.length; i++) {
-      this.editor[editorProps[i]] = this.props.editorProps[editorProps[i]];
-    }
-
-    this.editor.getSession().setMode(`ace/mode/${mode}`);
-    this.editor.setTheme(`ace/theme/${theme}`);
-    this.editor.setFontSize(fontSize);
-    this.editor.setValue(value, cursorStart || -1);
-    this.editor.renderer.setShowGutter(showGutter);
-    this.editor.getSession().setUseWrapMode(wrapEnabled);
-    this.editor.setShowPrintMargin(showPrintMargin);
-    this.editor.setShowInvisibles(showInvisibles);
-    this.editor.on('focus', this.onFocus);
-    this.editor.on('blur', this.onBlur);
-    this.editor.on('copy', this.onCopy);
-    this.editor.on('paste', this.onPaste);
-    this.editor.on('change', this.onChange);
-
-    this.handleOptions(this.props);
-
-    for (let i = 0; i < editorOptions.length; i++) {
-      const option = editorOptions[i];
-      this.editor.setOption(option, this.props[option]);
-    }
-
-    if (Array.isArray(commands)) {
-      commands.forEach((command) => {
-        this.editor.commands.addCommand(command);
-      });
-    }
-
-    if (keyboardHandler) {
-      this.editor.setKeyboardHandler('ace/keyboard/' + keyboardHandler);
-    }
-
-    this.silent = false;
-
-    if (onLoad) {
-      onLoad(this.editor);
     }
   }
 
@@ -185,6 +117,74 @@ export default class ReactAce extends Component {
     }
   }
 
+  initEditor(element) {
+    if (element === null || element === this.lastElement) {
+      return;
+    }
+    this.lastElement = element;
+    this.silent = true;
+    const {
+      mode,
+      theme,
+      fontSize,
+      value,
+      cursorStart,
+      showGutter,
+      wrapEnabled,
+      showPrintMargin,
+      showInvisibles,
+      keyboardHandler,
+      onLoad,
+      commands,
+    } = this.props;
+
+    this.editor = ace.edit(element);
+
+    this.editor.$blockScrolling = Infinity;
+
+    const editorProps = Object.keys(this.props.editorProps);
+    for (let i = 0; i < editorProps.length; i++) {
+      this.editor[editorProps[i]] = this.props.editorProps[editorProps[i]];
+    }
+
+    this.editor.getSession().setMode(`ace/mode/${mode}`);
+    this.editor.setTheme(`ace/theme/${theme}`);
+    this.editor.setFontSize(fontSize);
+    this.editor.setValue(value, cursorStart || -1);
+    this.editor.renderer.setShowGutter(showGutter);
+    this.editor.getSession().setUseWrapMode(wrapEnabled);
+    this.editor.setShowPrintMargin(showPrintMargin);
+    this.editor.setShowInvisibles(showInvisibles);
+    this.editor.on('focus', this.onFocus);
+    this.editor.on('blur', this.onBlur);
+    this.editor.on('copy', this.onCopy);
+    this.editor.on('paste', this.onPaste);
+    this.editor.on('change', this.onChange);
+
+    this.handleOptions(this.props);
+
+    for (let i = 0; i < editorOptions.length; i++) {
+      const option = editorOptions[i];
+      this.editor.setOption(option, this.props[option]);
+    }
+
+    if (Array.isArray(commands)) {
+      commands.forEach((command) => {
+        this.editor.commands.addCommand(command);
+      });
+    }
+
+    if (keyboardHandler) {
+      this.editor.setKeyboardHandler('ace/keyboard/' + keyboardHandler);
+    }
+
+    this.silent = false;
+
+    if (onLoad) {
+      onLoad(this.editor);
+    }
+  }
+
   handleOptions(props) {
     const setOptions = Object.keys(props.setOptions);
     for (let y = 0; y < setOptions.length; y++) {
@@ -200,7 +200,8 @@ export default class ReactAce extends Component {
         id={name}
         className={className}
         style={divStyle}
-        ref={(element) => this.initEditor(element)}>
+        ref={(element) => this.initEditor(element)}
+      >
       </div>
     );
   }
@@ -215,6 +216,7 @@ ReactAce.propTypes = {
   width: PropTypes.string,
   fontSize: PropTypes.number,
   showGutter: PropTypes.bool,
+  showInvisibles: PropTypes.bool,
   onChange: PropTypes.func,
   onCopy: PropTypes.func,
   onPaste: PropTypes.func,
@@ -262,7 +264,7 @@ ReactAce.defaultProps = {
   readOnly: false,
   highlightActiveLine: true,
   showPrintMargin: true,
-  showInvisibles: false, 
+  showInvisibles: false,
   tabSize: 4,
   cursorStart: null,
   editorProps: {},
