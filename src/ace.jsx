@@ -42,6 +42,7 @@ export default class ReactAce extends Component {
       theme,
       fontSize,
       value,
+      defaultValue,
       cursorStart,
       showGutter,
       wrapEnabled,
@@ -67,7 +68,7 @@ export default class ReactAce extends Component {
     this.editor.getSession().setMode(`ace/mode/${mode}`);
     this.editor.setTheme(`ace/theme/${theme}`);
     this.editor.setFontSize(fontSize);
-    this.editor.setValue(value, cursorStart);
+    this.editor.setValue(value || defaultValue || '', cursorStart);
     this.editor.renderer.setShowGutter(showGutter);
     this.editor.getSession().setUseWrapMode(wrapEnabled);
     this.editor.setShowPrintMargin(showPrintMargin);
@@ -160,11 +161,12 @@ export default class ReactAce extends Component {
     if (!isEqual(nextProps.markers, oldProps.markers)) {
       this.handleMarkers(nextProps.markers || []);
     }
-    if (this.editor && this.editor.getValue() !== nextProps.value) {
+    if (nextProps.value !== null && nextProps.value !== undefined &&
+      this.editor && this.editor.getValue() !== nextProps.value) {
       // editor.setValue is a synchronous function call, change event is emitted before setValue return.
       this.silent = true;
       const pos = this.editor.session.selection.toJSON();
-      this.editor.setValue(nextProps.value, nextProps.cursorStart || -1);
+      this.editor.setValue(nextProps.value || '', nextProps.cursorStart || -1);
       this.editor.session.selection.fromJSON(pos);
       this.silent = false;
     }
@@ -247,7 +249,7 @@ export default class ReactAce extends Component {
     this.editor.getSession().setMode(`ace/mode/${mode}`);
     this.editor.setTheme(`ace/theme/${theme}`);
     this.editor.setFontSize(fontSize);
-    this.editor.setValue(value, cursorStart || -1);
+    this.editor.setValue(value || '', cursorStart || -1);
     this.editor.renderer.setShowGutter(showGutter);
     this.editor.getSession().setUseWrapMode(wrapEnabled);
     this.editor.setShowPrintMargin(showPrintMargin);
@@ -342,6 +344,7 @@ ReactAce.propTypes = {
   onBlur: PropTypes.func,
   onScroll: PropTypes.func,
   value: PropTypes.string,
+  defaultValue: PropTypes.string,
   onLoad: PropTypes.func,
   onBeforeLoad: PropTypes.func,
   minLines: PropTypes.number,
@@ -374,7 +377,8 @@ ReactAce.defaultProps = {
   theme: '',
   height: '500px',
   width: '500px',
-  value: '',
+  value: null,
+  defaultValue: '',
   fontSize: 12,
   showGutter: true,
   onChange: null,

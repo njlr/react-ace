@@ -11,11 +11,9 @@ class Example extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      code: "hello world"
+      defaultValue: '// Hello world',
+      code: null,
     };
-  }
-  onChange(value) {
-    this.setState({code: value});
   }
   render() {
     const myCommand = {
@@ -32,9 +30,13 @@ class Example extends React.Component {
           mode="java"
           theme="github"
           height="20em"
+          defaultValue={this.state.defaultValue}
           value={this.state.code}
-          onChange={(x) => this.onChange(x)}
+          onChange={code => this.setState({code})}
           commands={[myCommand]} />
+        <button onClick={() => {this.setState({defaultValue: 'xxx'})}}>
+          Change default value
+        </button>
         <pre style={{borderRadius: '4px', background: '#eee', padding: '1em'}}>
           <code>
             {this.state.code}
