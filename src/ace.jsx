@@ -2,6 +2,8 @@ import ace from 'brace';
 import React, { Component, PropTypes } from 'react';
 import isEqual from 'lodash.isequal';
 
+const { Range } = ace.acequire('ace/range');
+
 const editorOptions = [
   'minLines',
   'maxLines',
@@ -22,6 +24,7 @@ export default class ReactAce extends Component {
       'onBlur',
       'onCopy',
       'onPaste',
+      'onScroll',
       'handleOptions',
     ]
     .forEach(method => {
@@ -31,9 +34,78 @@ export default class ReactAce extends Component {
   }
 
   componentDidMount() {
-    const { onBeforeLoad } = this.props;
+    const {
+      name,
+      className,
+      onBeforeLoad,
+      mode,
+      theme,
+      fontSize,
+      value,
+      cursorStart,
+      showGutter,
+      wrapEnabled,
+      showPrintMargin,
+      keyboardHandler,
+      onLoad,
+      commands,
+      annotations,
+      markers,
+    } = this.props;
+
+    this.editor = ace.edit(name);
+
     if (onBeforeLoad) {
       onBeforeLoad(ace);
+    }
+
+    const editorProps = Object.keys(this.props.editorProps);
+    for (let i = 0; i < editorProps.length; i++) {
+      this.editor[editorProps[i]] = this.props.editorProps[editorProps[i]];
+    }
+
+    this.editor.getSession().setMode(`ace/mode/${mode}`);
+    this.editor.setTheme(`ace/theme/${theme}`);
+    this.editor.setFontSize(fontSize);
+    this.editor.setValue(value, cursorStart);
+    this.editor.renderer.setShowGutter(showGutter);
+    this.editor.getSession().setUseWrapMode(wrapEnabled);
+    this.editor.setShowPrintMargin(showPrintMargin);
+    this.editor.on('focus', this.onFocus);
+    this.editor.on('blur', this.onBlur);
+    this.editor.on('copy', this.onCopy);
+    this.editor.on('paste', this.onPaste);
+    this.editor.on('change', this.onChange);
+    this.editor.session.on('changeScrollTop', this.onScroll);
+    this.handleOptions(this.props);
+    this.editor.getSession().setAnnotations(annotations || []);
+    this.handleMarkers(markers || []);
+
+    // get a list of possible options to avoid 'misspelled option errors'
+    const availableOptions = this.editor.$options;
+    for (let i = 0; i < editorOptions.length; i++) {
+      const option = editorOptions[i];
+      if (availableOptions.hasOwnProperty(option)) {
+        this.editor.setOption(option, this.props[option]);
+      }
+    }
+
+    if (Array.isArray(commands)) {
+      commands.forEach((command) => {
+        this.editor.commands.addCommand(command);
+      });
+    }
+
+    if (keyboardHandler) {
+      this.editor.setKeyboardHandler('ace/keyboard/' + keyboardHandler);
+    }
+
+    if (className) {
+      this.refs.editor.className += ' ' + className;
+    }
+
+    if (onLoad) {
+      onLoad(this.editor);
     }
   }
 
@@ -45,6 +117,17 @@ export default class ReactAce extends Component {
       if (nextProps[option] !== oldProps[option]) {
         this.editor.setOption(option, nextProps[option]);
       }
+    }
+
+    if (nextProps.className !== oldProps.className) {
+      const appliedClasses = this.refs.editor.className;
+      const appliedClassesArray = appliedClasses.trim().split(' ');
+      const oldClassesArray = oldProps.className.trim().split(' ');
+      oldClassesArray.forEach((oldClass) => {
+        const index = appliedClassesArray.indexOf(oldClass);
+        appliedClassesArray.splice(index, 1);
+      });
+      this.refs.editor.className = ' ' + nextProps.className + ' ' + appliedClassesArray.join(' ');
     }
 
     if (nextProps.mode !== oldProps.mode) {
@@ -71,10 +154,18 @@ export default class ReactAce extends Component {
     if (!isEqual(nextProps.setOptions, oldProps.setOptions)) {
       this.handleOptions(nextProps);
     }
-    if (this.editor.getValue() !== nextProps.value) {
+    if (!isEqual(nextProps.annotations, oldProps.annotations)) {
+      this.editor.getSession().setAnnotations(nextProps.annotations || []);
+    }
+    if (!isEqual(nextProps.markers, oldProps.markers)) {
+      this.handleMarkers(nextProps.markers || []);
+    }
+    if (this.editor && this.editor.getValue() !== nextProps.value) {
       // editor.setValue is a synchronous function call, change event is emitted before setValue return.
       this.silent = true;
+      const pos = this.editor.session.selection.toJSON();
       this.editor.setValue(nextProps.value, nextProps.cursorStart || -1);
+      this.editor.session.selection.fromJSON(pos);
       this.silent = false;
     }
   }
@@ -114,6 +205,12 @@ export default class ReactAce extends Component {
   onPaste(text) {
     if (this.props.onPaste) {
       this.props.onPaste(text);
+    }
+  }
+
+  onScroll() {
+    if (this.props.onScroll) {
+      this.props.onScroll(this.editor);
     }
   }
 
@@ -192,13 +289,34 @@ export default class ReactAce extends Component {
     }
   }
 
+  handleMarkers(markers) {
+    // remove foreground markers
+    let currentMarkers = this.editor.getSession().getMarkers(true);
+    for (const i in currentMarkers) {
+      if (currentMarkers.hasOwnProperty(i)) {
+        this.editor.getSession().removeMarker(currentMarkers[i].id);
+      }
+    }
+    // remove background markers
+    currentMarkers = this.editor.getSession().getMarkers(false);
+    for (const i in currentMarkers) {
+      if (currentMarkers.hasOwnProperty(i)) {
+        this.editor.getSession().removeMarker(currentMarkers[i].id);
+      }
+    }
+    // add new markers
+    markers.forEach(({ startRow, startCol, endRow, endCol, className, type, inFront = false }) => {
+      const range = new Range(startRow, startCol, endRow, endCol);
+      this.editor.getSession().addMarker(range, className, type, inFront);
+    });
+  }
+
   render() {
-    const { name, className, width, height } = this.props;
+    const { name, width, height } = this.props;
     const divStyle = { width, height };
     return (
-      <div
+      <div ref="editor"
         id={name}
-        className={className}
         style={divStyle}
         ref={(element) => this.initEditor(element)}
       >
@@ -222,6 +340,7 @@ ReactAce.propTypes = {
   onPaste: PropTypes.func,
   onFocus: PropTypes.func,
   onBlur: PropTypes.func,
+  onScroll: PropTypes.func,
   value: PropTypes.string,
   onLoad: PropTypes.func,
   onBeforeLoad: PropTypes.func,
@@ -234,6 +353,8 @@ ReactAce.propTypes = {
   cursorStart: PropTypes.number,
   editorProps: PropTypes.object,
   setOptions: PropTypes.object,
+  annotations: PropTypes.array,
+  markers: PropTypes.array,
   keyboardHandler: PropTypes.string,
   wrapEnabled: PropTypes.bool,
   enableBasicAutocompletion: PropTypes.oneOfType([
@@ -259,6 +380,7 @@ ReactAce.defaultProps = {
   onChange: null,
   onPaste: null,
   onLoad: null,
+  onScroll: null,
   minLines: null,
   maxLines: null,
   readOnly: false,
