@@ -5,8 +5,14 @@ var webpack = require('webpack');
 module.exports = {
   module: {
     loaders: [
-      { test: /\.js?$/, loaders: ['babel-loader'], exclude: /node_modules/ }, 
-      { test: /\.jsx?$/, loaders: ['babel-loader'], exclude: /node_modules/ }
+      {
+        test: /\.jsx?$/,
+        loaders: ['babel-loader'],
+        exclude: /node_modules/,
+        query: {
+          presets: ['es2015', 'react']
+        } 
+      }
     ]
   },
   output: {
